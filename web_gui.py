@@ -45,9 +45,16 @@ def import_file(attrname, old, new):
 
 def button_handler():
     prompt = text_area.value
-    # returns [[image, path], [image, path] ...]
-    images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
-        
+    ddim_eta = slider_ddim_eta.value
+    ddim_steps = slider_ddim_steps.value
+    scale = slider_scale.value
+    n_samples = slider_n_samples.value
+    n_iter = slider_n_iter.value
+    W = slider_W.value
+    H = slider_H.value
+
+    # images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
+    images = txt2img_helper(prompt=prompt, n_samples=n_samples, n_iter=n_iter, ddim_steps = ddim_steps, ddim_eta=ddim_eta, scale=scale, W=W, H=H, outdir=None)
     select.options = [x[1] for x in images]
     select.value = images[0][1]
 
@@ -75,11 +82,7 @@ fig1 = figure(title='Stable Diffusion',
              tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
              )
 fig1.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
-
-
-
 ### end txt2img section ###
-
 
 # img2img section ###
 fig2 = figure(title='Stable Diffusion',
@@ -87,7 +90,6 @@ fig2 = figure(title='Stable Diffusion',
              tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
              )
 fig2.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
-
 ### end img2img section ###
 
 
@@ -114,8 +116,11 @@ slider_ddim_steps = Slider(start=1, end=100, value=10, step=1, title="ddim_steps
 slider_scale = Slider(start=1.0, end=10.0, value=7.5, step=0.1, title="scale")
 slider_n_samples = Slider(start=1, end=10, value=2, step=1, title="n_samples")
 slider_n_iter = Slider(start=1, end=10, value=1, step=1, title="n_iter")
+slider_W = Slider(start=0, end=1024, value=512, step=32, title="W")
+slider_H = Slider(start=0, end=1024, value=512, step=32, title="H")
 
-layout_slider = column(slider_ddim_eta, slider_ddim_steps, slider_scale, slider_n_samples, slider_n_iter)
+
+layout_slider = column(slider_ddim_eta, slider_ddim_steps, slider_scale, slider_n_samples, slider_n_iter, slider_W, slider_H)
 
 # Layout
 #txt2img
