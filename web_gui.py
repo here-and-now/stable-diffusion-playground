@@ -43,6 +43,20 @@ def import_file(attrname, old, new):
     img, view, xdim, ydim = image_array(image)
     source.data = dict(image=[img])
 
+def button_handler():
+    prompt = text_area.value
+    # returns [[image, path], [image, path] ...]
+    images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
+        
+    select.options = [x[1] for x in images]
+    select.value = images[0][1]
+
+    image = images[0][0].convert('RGBA')
+    img, view, xdim, ydim = image_array(image)
+
+    source.data = dict(image=[img])
+
+
 
 # get list of images
 image_list = glob.glob('imgs/*.png')
@@ -90,27 +104,22 @@ file_input.on_change('value', import_file)
 # prompt input
 text_area = TextAreaInput(value="prompt here", rows=5, title="Text:")
 
-def button_handler():
-    prompt = text_area.value
-    # returns [[image, path], [image, path] ...]
-    images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
-        
-    select.options = [x[1] for x in images]
-    select.value = images[0][1]
-
-    image = images[0][0].convert('RGBA')
-    img, view, xdim, ydim = image_array(image)
-
-    source.data = dict(image=[img])
-
 button = Button(label="Generate", button_type="success")
 button.on_click(button_handler)
 
 
+# Sliders
+slider_ddim_eta = Slider(start=0.0, end=1.0, value=0.0, step=0.01, title="ddim_eta")
+slider_ddim_steps = Slider(start=1, end=100, value=10, step=1, title="ddim_steps")
+slider_scale = Slider(start=1.0, end=10.0, value=7.5, step=0.1, title="scale")
+slider_n_samples = Slider(start=1, end=10, value=2, step=1, title="n_samples")
+slider_n_iter = Slider(start=1, end=10, value=1, step=1, title="n_iter")
+
+layout_slider = column(slider_ddim_eta, slider_ddim_steps, slider_scale, slider_n_samples, slider_n_iter)
 
 # Layout
 #txt2img
-layout_txt2img =  row(column(fig1, select), column(text_area, button))
+layout_txt2img =  row(column(fig1, select), column(text_area, button, layout_slider))
 tab_txt2img = Panel(child=layout_txt2img, title='Text to Image')
 
 #img2img
