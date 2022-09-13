@@ -92,9 +92,15 @@ text_area = TextAreaInput(value="prompt here", rows=5, title="Text:")
 
 def button_handler():
     prompt = text_area.value
+    # returns [[image, path], [image, path] ...]
     images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
-    image = Image.open(images[0]).convert('RGBA')
+        
+    select.options = [x[1] for x in images]
+    select.value = images[0][1]
+
+    image = images[0][0].convert('RGBA')
     img, view, xdim, ydim = image_array(image)
+
     source.data = dict(image=[img])
 
 button = Button(label="Generate", button_type="success")

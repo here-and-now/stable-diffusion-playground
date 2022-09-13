@@ -185,10 +185,10 @@ def run_txt2img(prompt=None, n_samples=1, n_iter=1, ddim_steps=50, ddim_eta=0.0,
                         x_sample = 255.0 * rearrange(x_sample[0].cpu().numpy(), "c h w -> h w c")
 
                         x_img = Image.fromarray(x_sample.astype(np.uint8))
-                        x_img.save(
-                            os.path.join(sample_path, "seed_" + str(seed) + "_" + f"{base_count:05}.{format}")
-                        )
-                        all_images.append(x_img)
+                        
+                        outpath = os.path.join(sample_path, "seed_" + str(seed) + "_" + f"{base_count:05}.{format}")
+                        x_img.save(outpath)
+                        all_images.append([x_img, outpath])
 
                         seeds += str(seed) + ","
                         seed += 1
