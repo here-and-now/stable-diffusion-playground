@@ -17,7 +17,7 @@ from bokeh.models.widgets import Tabs, Panel
 
 from PIL import Image
 
-from optimizedSD.helper import txt2img_helper
+from optimizedSD.helper import txt2img_helper, img2img_helper
 
 def image_array(image):
     xdim, ydim = image.size
@@ -43,7 +43,7 @@ def import_file(attrname, old, new):
     img, view, xdim, ydim = image_array(image)
     source.data = dict(image=[img])
 
-def button_handler():
+def txt2img_button_handler():
     prompt = text_area.value
     ddim_eta = slider_ddim_eta.value
     ddim_steps = slider_ddim_steps.value
@@ -63,10 +63,33 @@ def button_handler():
 
     source.data = dict(image=[img])
 
+def img2img_button_handler():
+    prompt = text_area.value
+    ddim_eta = slider_ddim_eta.value
+    ddim_steps = slider_ddim_steps.value
+    scale = slider_scale.value
+    n_samples = slider_n_samples.value
+    n_iter = slider_n_iter.value
+    W = slider_W.value
+    H = slider_H.value
+
+    # init_img = Image.open(select.value).convert('RGBA')
+    init_img = select.value
+
+    # images = txt2img_helper(prompt=prompt, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None)
+    images = img2img_helper(prompt=prompt, n_samples=n_samples, n_iter=n_iter, ddim_steps = ddim_steps, ddim_eta=ddim_eta, scale=scale, W=W, H=H, outdir=None, init_img=init_img)
+    select.options = [x[1] for x in images]
+    select.value = images[0][1]
+
+    image = images[0][0].convert('RGBA')
+    img, view, xdim, ydim = image_array(image)
+
+    source.data = dict(image=[img])
+
 
 
 # get list of images
-image_list = glob.glob('imgs/*.png')
+image_list = glob.glob('/home/os/gits/stable-diffusion-playground/imgs/*.png')
 image_list.sort()
 images = [Image.open(x).convert('RGBA') for x in image_list]
 image = images[0]
@@ -106,8 +129,11 @@ file_input.on_change('value', import_file)
 # prompt input
 text_area = TextAreaInput(value="prompt here", rows=5, title="Text:")
 
-button = Button(label="Generate", button_type="success")
-button.on_click(button_handler)
+txt2img_button = Button(label="Generate", button_type="success")
+txt2img_button.on_click(txt2img_button_handler)
+
+img2img_button = Button(label="Generate", button_type="success")
+img2img_button.on_click(img2img_button_handler)
 
 
 # Sliders
@@ -124,15 +150,15 @@ layout_slider = column(slider_ddim_eta, slider_ddim_steps, slider_scale, slider_
 
 # Layout
 #txt2img
-layout_txt2img =  row(column(fig1, select), column(text_area, button, layout_slider))
-tab_txt2img = Panel(child=layout_txt2img, title='Text to Image')
+txt2img_layout =  row(column(fig1, select), column(text_area, txt2img_button, layout_slider))
+txt2img_tab = Panel(child=txt2img_layout, title='Text to Image')
 
 #img2img
-layout = row(column(fig1, file_input, select), column(fig2))
-tab_img2img = Panel(child=layout, title='Image to Image')
+img2img_layout = row(column(fig1, select), column(text_area, img2img_button, layout_slider), column(fig2))
+img2img_tab = Panel(child=img2img_layout, title='Image to Image')
 
 # tab it
-tabs = Tabs(tabs=[tab_txt2img, tab_img2img])
+tabs = Tabs(tabs=[txt2img_tab, img2img_tab])
 
 curdoc().add_root(tabs)
 

@@ -1,6 +1,7 @@
 import sys
 sys.path.append('/home/os/gits/stable-diffusion/')
-from optimizedSD.optimized_txt2img import run_txt2img, run_img2img
+from optimizedSD.optimized_txt2img import run_txt2img
+from optimizedSD.optimized_img2img import run_img2img
 
 def txt2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None):
     skip_grid = False
@@ -25,7 +26,7 @@ def txt2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta
     return images
 
 
-def img2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None, init_img=None):
+def img2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None, init_img=None, strength=0.5):
     skip_grid = False
     skip_save = False
     fixed_code = False
@@ -43,7 +44,7 @@ def img2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta
     f = 8 # downsampling factor
     C = 4 # latent channels
 
-    images = run_img2img(prompt=prompt, n_samples=n_samples, n_iter=n_iter, ddim_steps=ddim_steps, ddim_eta=ddim_eta, scale=scale, device=device, skip_grid=skip_grid, skip_save=skip_save, outdir=outdir, fixed_code=fixed_code, unet_bs=unet_bs, turbo=turbo, precision=precision, format=format, sampler=sampler, seed=seed, H=H, W=W, f=f, C=C, init_img=None)
+    images = run_img2img(prompt=prompt, n_samples=n_samples, n_iter=n_iter, ddim_steps=ddim_steps, ddim_eta=ddim_eta, scale=scale, device=device, skip_grid=skip_grid, skip_save=skip_save, outdir=outdir, fixed_code=fixed_code, unet_bs=unet_bs, turbo=turbo, precision=precision, format=format, sampler=sampler, seed=seed, H=H, W=W, f=f, C=C, init_img=init_img, strength=strength)
 
     return images
 
