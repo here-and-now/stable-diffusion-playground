@@ -51,6 +51,8 @@ image = images[0]
 img, view, xdim, ydim = image_array(image)
 source = ColumnDataSource(data=dict(image=[img]))
 
+
+
 # Figure
 dim = max(xdim, ydim)
 fig = figure(title='Stable Diffusion',
@@ -67,4 +69,9 @@ select.on_change('value', update_image)
 file_input = FileInput(accept=".png")
 file_input.on_change('value', import_file)
 
-curdoc().add_root(column(file_input, select, fig))
+# Tabs
+tab1 = Panel(child=column(select, fig), title='Stable Diffusion')
+tab2 = Panel(child=column(file_input, fig), title='Import Image')
+tabs = Tabs(tabs=[tab1, tab2])
+
+curdoc().add_root(tabs)
