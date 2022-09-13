@@ -36,6 +36,8 @@ def load_model_from_config(ckpt, verbose=False):
 
 
 def run_txt2img(prompt=None, n_samples=1, n_iter=1, ddim_steps=50, ddim_eta=0.0, scale=7.5,W=500,H=500,C=4, f=8, device="cuda", skip_grid=False, skip_save=False, outdir=None, fixed_code=False, unet_bs=1, turbo=False, precision="autocast", format="png", sampler="plms", seed=None, n_rows=0, from_file=False):
+
+
     config = "/home/os/gits/stable-diffusion/optimizedSD/v1-inference.yaml"
     ckpt = "/home/os/gits/stable-diffusion/models/ldm/stable-diffusion-v1/model.ckpt"
 
