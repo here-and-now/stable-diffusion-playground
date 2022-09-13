@@ -8,7 +8,7 @@ import numpy as np
 
 from bokeh.io import curdoc
 from bokeh.layouts import column, row
-from bokeh.models import ColumnDataSource, CustomJS, Slider, Button, Div, DataTable, TableColumn, NumberFormatter, FileInput, RangeSlider, Select
+from bokeh.models import ColumnDataSource, CustomJS, Slider, Button, Div, DataTable, TableColumn, NumberFormatter, FileInput, RangeSlider, Select, TextAreaInput, TextInput
 from bokeh.plotting import figure, show, output_file
 from bokeh.models.widgets import Tabs, Panel
 
@@ -52,15 +52,30 @@ img, view, xdim, ydim = image_array(image)
 source = ColumnDataSource(data=dict(image=[img]))
 
 
-
-# Figure
+### txt2img section ###
 dim = max(xdim, ydim)
-fig = figure(title='Stable Diffusion',
+fig1 = figure(title='Stable Diffusion',
              x_range=(0, dim), y_range=(0, dim),
              tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
              )
-fig.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
+fig1.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
 
+### end txt2img section ###
+
+
+# img2img section ###
+fig2 = figure(title='Stable Diffusion',
+             x_range=(0, dim), y_range=(0, dim),
+             tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
+             )
+fig2.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
+
+### end img2img section ###
+
+
+def txt2img():
+
+### GUI ###
 # Select tool
 select = Select(title="Image:", value=image_list[0], options=image_list)
 select.on_change('value', update_image)
@@ -69,9 +84,29 @@ select.on_change('value', update_image)
 file_input = FileInput(accept=".png")
 file_input.on_change('value', import_file)
 
-# Tabs
-tab1 = Panel(child=column(select, fig), title='Stable Diffusion')
-tab2 = Panel(child=column(file_input, fig), title='Import Image')
-tabs = Tabs(tabs=[tab1, tab2])
+# prompt input
+text_area = TextAreaInput(value="prompt here", rows=5, title="Text:")
+
+# button
+button_txt2img = Button(label="Generate", button_type="success")
+button_img2img = Button(label="Generate", button_type="success")
+
+
+
+
+# Layout
+#txt2img
+layout_txt2img =  row(column(fig1, select), column(text_area, button))
+tab_txt2img = Panel(child=layout_txt2img, title='Text to Image')
+
+
+
+#img2img
+layout = row(column(fig1, file_input, select), column(fig2))
+tab_img2img = Panel(child=layout, title='Image to Image')
+
+# tab it
+tabs = Tabs(tabs=[tab_txt2img, tab_img2img])
 
 curdoc().add_root(tabs)
+
