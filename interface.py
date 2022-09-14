@@ -14,81 +14,6 @@ import base64
 import sys
 sys.path.append('/home/os/gits/stable-diffusion/')
 
-# def image_array(image):
-    # xdim, ydim = image.size
-    # print("Dimensions: ({xdim}, {ydim})".format(**locals()))
-    # # Create an array representation for the image `img`, and an 8-bit "4
-    # # layer/RGBA" version of it `view`.
-    # img = np.empty((ydim, xdim), dtype=np.uint32)
-    # view = img.view(dtype=np.uint8).reshape((ydim, xdim, 4))
-    # # Copy the RGBA image into view, flipping it so it comes right-side up
-    # # with a lower-left origin
-    # view[:, :, :] = np.flipud(np.asarray(image))
-    # return img, view, xdim, ydim
-
-
-# def update_on_select(attrname, old, new):
-    # # update_image(images)
-    # pass
-
-# def import_file(attrname, old, new):
-    # # file_input returns b64 encoded string
-    # buf = io.BytesIO(base64.b64decode(file_input.value))
-    # update_image(buf)
-
-# def get_parameter_values():
-    # parameter_dict = {'prompt': prompt_input.value,
-                     # 'n_samples': slider_n_samples.value,
-                     # 'n_iter': slider_n_iter.value,
-                     # 'ddim_steps': slider_ddim_steps.value,
-                     # 'ddim_eta': slider_ddim_eta.value,
-                     # 'scale': slider_scale.value,
-                     # 'W': slider_W.value,
-                     # 'H': slider_H.value,
-                     # 'strength': slider_strength.value}
-    # return parameter_dict
-
-# def txt2img_button_handler():
-    # parameter_dict = get_parameter_values()
-    # images = txt2img_helper(prompt=parameter_dict['prompt'], n_samples=parameter_dict['n_samples'], n_iter=parameter_dict['n_iter'],
-                            # ddim_steps=parameter_dict['ddim_steps'], ddim_eta=parameter_dict['ddim_eta'],
-                            # scale=parameter_dict['scale'], W=parameter_dict['W'], H=parameter_dict['H'], outdir=None)
-    # update_image(images)
-
-# def img2img_button_handler():
-    # parameter_dict = get_parameter_values()
-    # init_img = 'inputs/' + file_input.filename
-
-    # images = img2img_helper(init_img=init_img, n_samples=parameter_dict['n_samples'], n_iter=parameter_dict['n_iter'],
-                            # ddim_steps=parameter_dict['ddim_steps'], ddim_eta=parameter_dict['ddim_eta'],
-                            # scale=parameter_dict['scale'], W=parameter_dict['W'], H=parameter_dict['H'], strength=parameter_dict['strength'], outdir=None)
-
-    # update_image(images)
-
-# def update_image(images):
-    # # select.options = [x[1] for x in images]
-    # # select.value = images[0][1]
-
-    # select.options = images
-    # select.value = images[0]
-
-    # image = Image.open(select.value).convert('RGBA')
-    # img, view, xdim, ydim = image_array(image)
-    # source.data = dict(image=[img])
-
-    # return img, view, xdim, xdim
-
-
-# get list of images
-# image_list = glob.glob('/home/os/gits/stable-diffusion-playground/imgs/*.png')
-# image_list.sort()
-
-# source = ColumnDataSource(data=dict(image=[img]))
-# img, view, xdim, ydim = update_image(image_list)
-
-### txt2img section ###
-
-
 class StableDiffusionBokehApp():
     def __init__(self):
         self.source = ColumnDataSource(data=dict(image=[]))
@@ -103,6 +28,7 @@ class StableDiffusionBokehApp():
                       x_range=(0, self.dim), y_range=(0, self.dim),
                       tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
                       )
+        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         # self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         ### end txt2img section ###
 
@@ -111,14 +37,14 @@ class StableDiffusionBokehApp():
                       x_range=(0, self.dim), y_range=(0, self.dim),
                       tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
                       )
-        # self.fig2.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
+        self.fig2.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         ### end img2img section ###
         self.select = Select(title="Image:", value='Select input folder', options=['Select input folder', 'Select output folder'])
         self.select.on_change('value', self.update_on_select)
 
         # File input
         self.file_input = FileInput(accept=".png")
-        self.file_input.on_change('value', self.import_file)
+        self.file_input.on_change('filename', self.import_file)
 
         # prompt input
         self.prompt_input = TextAreaInput(value="prompt here", rows=5, title="Text:")
@@ -156,17 +82,6 @@ class StableDiffusionBokehApp():
 
         curdoc().add_root(self.tabs)
 
-    # def update_on_select(self, attr, old, new):
-        # image = Image.open(new).convert('RGBA')
-        # img, view, xdim, ydim = image_array(image)
-        # self.source.data = dict(image=[img])
-
-    def import_file(self, attr, old, new):
-        image = Image.open(new).convert('RGBA')
-        img, view, xdim, ydim = image_array(image)
-        self.source.data = dict(image=[img])
-
-
     def get_parameter_values(self):
         parameter_dict = {
             'prompt': self.prompt_input.value,
@@ -188,9 +103,6 @@ class StableDiffusionBokehApp():
                                 n_samples=self.parameter_dict['n_samples'], n_iter=self.parameter_dict['n_iter'],
                                 W=self.parameter_dict['W'], H=self.parameter_dict['H'])
 
-        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-
         self.active_image = self.images_list[0]
         self.update_image()
 
@@ -201,15 +113,12 @@ class StableDiffusionBokehApp():
                                 n_samples=self.parameter_dict['n_samples'], n_iter=self.parameter_dict['n_iter'],
                                 W=self.parameter_dict['W'], H=self.parameter_dict['H'], strength=self.parameter_dict['strength'])
 
-        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
 
         self.active_image = self.images_list[0]
         self.update_image()
     
-
-
     def update_image(self):
+        self.active_image = self.images_list[0]
         self.select.options = self.images_list
         self.select.value = self.active_image
 
@@ -222,23 +131,20 @@ class StableDiffusionBokehApp():
         # Copy the RGBA image into view, flipping it so it comes right-side up
         # with a lower-left origin
         view[:, :, :] = np.flipud(np.asarray(image))
-
         self.source.data = dict(image=[img])
 
     def update_on_select(self, attr, old, new):
         self.active_image = new
         self.update_image()
 
+    def import_file(self, attr, old, new):
+        # fuck this, needed to change file_input to change on filename instead of value
+        filename = self.file_input.filename
+        file = io.BytesIO(base64.b64decode(self.file_input.value))
 
+        image = Image.open(file).convert('RGBA')
+        image.save(f'inputs/{filename}', 'png')
 
-
-
-
-
-
-
-
-# StableDiffusionBokehApp()
-
-
+        self.images_list = [f'inputs/{filename}']
+        self.update_image()
 
