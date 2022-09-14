@@ -13,7 +13,6 @@ import io
 import base64
 import sys
 sys.path.append('/home/os/gits/stable-diffusion/')
-sys.path.append('/home/os/gits/stable-diffusion/')
 
 
 def image_array(image):
@@ -29,48 +28,33 @@ def image_array(image):
     return img, view, xdim, ydim
 
 
-def update_image(attrname, old, new):
-    image = Image.open(select.value).convert('RGBA')
-    img, view, xdim, ydim = image_array(image)
-    source.data = dict(image=[img])
-
+def update_on_select(attrname, old, new):
+    # update_image(images)
+    pass
 
 def import_file(attrname, old, new):
     # file_input returns b64 encoded string
     buf = io.BytesIO(base64.b64decode(file_input.value))
-    image = Image.open(buf).convert('RGBA')
-    img, view, xdim, ydim = image_array(image)
-    source.data = dict(image=[img])
+    update_image(buf)
 
+def get_parameter_values():
+    parameter_dict = {'prompt': prompt_input.value,
+                     'n_samples': slider_n_samples.value,
+                     'n_iter': slider_n_iter.value,
+                     'ddim_steps': slider_ddim_steps.value,
+                     'ddim_eta': slider_ddim_eta.value,
+                     'scale': slider_scale.value,
+                     'W': slider_W.value,
+                     'H': slider_H.value,
+                     'strength': slider_strength.value}
+    return parameter_dict
 
 def txt2img_button_handler():
     parameter_dict = get_parameter_values()
-
     images = txt2img_helper(prompt=parameter_dict['prompt'], n_samples=parameter_dict['n_samples'], n_iter=parameter_dict['n_iter'],
-             ddim_steps=parameter_dict['ddim_steps'], ddim_eta=parameter_dict['ddim_eta'],
-             scale=parameter_dict['scale'], W=parameter_dict['W'], H=parameter_dict['H'], outdir=None)
-
-       
-def get_parameter_values():
-    parameter_dict = {'prompt': prompt_input.value,
-                      'n_samples': n_samples_slider.value,
-                      'n_iter': n_iter_slider.value,
-                      'ddim_steps': ddim_steps_slider.value,
-                      'ddim_eta': ddim_eta_slider.value,
-                      'scale': scale_slider.value,
-                      'W': W_slider.value,
-                      'H': H_slider.value,
-                      'strength': strength_slider.value}
-    return parameter_dict
-
-    select.options = [x[1] for x in images]
-    select.value = images[0][1]
-    image = images[0][0].convert('RGBA')
-    img, view, xdim, ydim = image_array(image)
-    source.data = dict(image=[img])
-
-
-
+                            ddim_steps=parameter_dict['ddim_steps'], ddim_eta=parameter_dict['ddim_eta'],
+                            scale=parameter_dict['scale'], W=parameter_dict['W'], H=parameter_dict['H'], outdir=None)
+    update_image(images)
 
 def img2img_button_handler():
     parameter_dict = get_parameter_values()
@@ -80,27 +64,35 @@ def img2img_button_handler():
                             ddim_steps=parameter_dict['ddim_steps'], ddim_eta=parameter_dict['ddim_eta'],
                             scale=parameter_dict['scale'], W=parameter_dict['W'], H=parameter_dict['H'], strength=parameter_dict['strength'], outdir=None)
 
-    select.options = [x[1] for x in images]
-    select.value = images[0][1]
+    update_image(images)
 
-    image = images[0][0].convert('RGBA')
+def update_image(images):
+    # select.options = [x[1] for x in images]
+    # select.value = images[0][1]
+
+    select.options = images
+    select.value = images[0]
+
+    image = Image.open(select.value).convert('RGBA')
     img, view, xdim, ydim = image_array(image)
-
     source.data = dict(image=[img])
+
+    return img, view, xdim, xdim
 
 
 # get list of images
-image_list = glob.glob('/home/os/gits/stable-diffusion-playground/imgs/*.png')
-image_list.sort()
-images = [Image.open(x).convert('RGBA') for x in image_list]
-image = images[0]
+# image_list = glob.glob('/home/os/gits/stable-diffusion-playground/imgs/*.png')
+# image_list.sort()
 
-img, view, xdim, ydim = image_array(image)
-source = ColumnDataSource(data=dict(image=[img]))
-
+# source = ColumnDataSource(data=dict(image=[img]))
+# img, view, xdim, ydim = update_image(image_list)
 
 ### txt2img section ###
+
+source = ColumnDataSource(data=dict(image=[]))
+xdim, ydim = 500, 500
 dim = max(xdim, ydim)
+
 fig1 = figure(title='Stable Diffusion',
               x_range=(0, dim), y_range=(0, dim),
               tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
@@ -121,8 +113,9 @@ fig2.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
 
 
 # Select tool
-select = Select(title="Image:", value=image_list[0], options=image_list)
-select.on_change('value', update_image)
+# select = Select(title="Image:", value=image_list[0], options=image_list)
+select = Select(title="Image:", value='Select input folder', options=['Select input folder'])
+select.on_change('value', update_on_select)
 
 # File input
 file_input = FileInput(accept=".png")
@@ -140,7 +133,7 @@ img2img_button.on_click(img2img_button_handler)
 # Sliders
 slider_ddim_eta = Slider(start=0.0, end=1.0, value=0.0,
                          step=0.01, title="ddim_eta")
-slider_ddim_steps = Slider(start=0, end=500, value=10,
+slider_ddim_steps = Slider(start=0, end=500, value=1,
                            step=1, title="ddim_steps")
 slider_scale = Slider(start=1.0, end=10.0, value=7.5, step=0.1, title="scale")
 slider_n_samples = Slider(start=1, end=10, value=2, step=1, title="n_samples")
