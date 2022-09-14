@@ -55,14 +55,11 @@ def img2img_helper(prompt=None, n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta
 
     unet_bs = 1
     f = 8 # downsampling factor
-    C = 4 # latent channels
+    C = 4 # latent channels or Classifier free guidance aka Cfg?
 
     images = run_img2img(prompt=prompt, n_samples=n_samples, n_iter=n_iter, ddim_steps=ddim_steps, ddim_eta=ddim_eta, scale=scale, device=device, skip_grid=skip_grid, skip_save=skip_save, outdir=outdir, fixed_code=fixed_code, unet_bs=unet_bs, turbo=turbo, precision=precision, format=format, sampler=sampler, seed=seed, H=H, W=W, f=f, C=C, init_img=init_img, strength=strength)
 
     return images
-
-# init_img = '/home/os/gits/stable-diffusion-playground/output/funky_cup_of_tea_exploring_the_world/seed_809157_00001.png'
-# img2img_helper(prompt="A dog", n_samples=2, n_iter=1, ddim_steps = 10, ddim_eta=0.0, scale=7.5, W=512, H=512, outdir=None, init_img=init_img, strength=0.5)
 
 
 
