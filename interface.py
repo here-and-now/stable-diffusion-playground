@@ -114,7 +114,7 @@ class StableDiffusionBokehApp():
         # self.fig2.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         ### end img2img section ###
         self.select = Select(title="Image:", value='Select input folder', options=['Select input folder', 'Select output folder'])
-        # self.select.on_change('value', self.update_on_select)
+        self.select.on_change('value', self.update_on_select)
 
         # File input
         self.file_input = FileInput(accept=".png")
@@ -156,10 +156,10 @@ class StableDiffusionBokehApp():
 
         curdoc().add_root(self.tabs)
 
-    def update_on_select(self, attr, old, new):
-        image = Image.open(new).convert('RGBA')
-        img, view, xdim, ydim = image_array(image)
-        self.source.data = dict(image=[img])
+    # def update_on_select(self, attr, old, new):
+        # image = Image.open(new).convert('RGBA')
+        # img, view, xdim, ydim = image_array(image)
+        # self.source.data = dict(image=[img])
 
     def import_file(self, attr, old, new):
         image = Image.open(new).convert('RGBA')
@@ -206,16 +206,15 @@ class StableDiffusionBokehApp():
 
         self.active_image = self.images_list[0]
         self.update_image()
+    
 
 
     def update_image(self):
-
         self.select.options = self.images_list
         self.select.value = self.active_image
 
         image = Image.open(self.active_image).convert('RGBA')
         xdim, ydim = image.size
-        print("Dimensions: ({xdim}, {ydim})".format(**locals()))
         # Create an array representation for the image `img`, and an 8-bit "4
         # layer/RGBA" version of it `view`.
         img = np.empty((ydim, xdim), dtype=np.uint32)
@@ -226,7 +225,9 @@ class StableDiffusionBokehApp():
 
         self.source.data = dict(image=[img])
 
-
+    def update_on_select(self, attr, old, new):
+        self.active_image = new
+        self.update_image()
 
 
 
