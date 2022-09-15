@@ -72,7 +72,7 @@ class StableDiffusionBokehApp():
         # self.fig_gallery = figure(x_range=(0, 1), y_range=(0, 1), plot_width=500, plot_height=500)
 
         self.gallery = figure(title='Gallery',
-                      x_range=(0, self.dim*2), y_range=(0, self.dim*2),
+                      x_range=(0, self.dim), y_range=(0, self.dim),
                       tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save')
          
         # self.fig_gallery.axis.visible = False
@@ -99,9 +99,6 @@ class StableDiffusionBokehApp():
         self.doc = curdoc()
         self.doc.add_root(self.tabs)
         
-
-
-   
     def get_parameter_values(self):
         parameter_dict = {
             'prompt': self.prompt_input.value,
@@ -125,7 +122,6 @@ class StableDiffusionBokehApp():
 
         self.active_image = self.images_list[0]
         self.select.options = self.images_list
-
         self.update_image()
 
     def img2img_button_handler(self):
@@ -137,7 +133,6 @@ class StableDiffusionBokehApp():
 
         self.active_image = self.images_list[0]
         self.select.options = self.images_list
-
         self.update_image()
    
 
@@ -165,16 +160,18 @@ class StableDiffusionBokehApp():
         self.populate_gallery_plot()
 
     def populate_gallery_plot(self):
-
-        for image_ in self.images_list:
+        for i,image_ in enumerate(self.images_list):
             img, view, xdim, ydim = self.image_array(Image.open(image_).convert('RGBA'))
+
             source = ColumnDataSource(data=dict(image=[img]))
-            self.gallery.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
-       
+            self.gallery.image_rgba(image='image', x=xdim*i, y=0, dw=xdim, dh=ydim, source=source)
+
+            self.gallery.x_range.end = self.xdim * len(self.images_list)
+            self.gallery.plot_height = ydim
+            self.gallery.plot_width = self.xdim * len(self.images_list)
 
 
     def update_on_select(self, attr, old, new):
-        # self.populate_gallery_plot()
         self.active_image = self.select.value
         self.update_image()
 
