@@ -1,5 +1,6 @@
 from optimizedSD.helper import txt2img_helper, img2img_helper
 from PIL import Image
+import bokeh
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure, show, output_file
 from bokeh.models import ColumnDataSource, CustomJS, Slider, Button, Div, DataTable, TableColumn, NumberFormatter, FileInput, RangeSlider, Select, TextAreaInput, TextInput
@@ -16,30 +17,27 @@ sys.path.append('/home/os/gits/stable-diffusion/')
 
 class StableDiffusionBokehApp():
     def __init__(self):
-        self.source = ColumnDataSource(data=dict(image=[]))
         
         self.images_list = []
         self.active_image = None
+        self.source = ColumnDataSource(data=dict(image=[]))
 
         self.xdim, self.ydim = 500, 500
         self.dim = max(self.xdim, self.ydim)
 
+        # Figures
         self.fig1 = figure(title='Stable Diffusion',
                       x_range=(0, self.dim), y_range=(0, self.dim),
                       tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
                       )
-        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-        # self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-        ### end txt2img section ###
-
-        # img2img section ###
-        self.fig2 = figure(title='Stable Diffusion',
+        self.fig2 = figure(title='Stable Diffusion: img2img result',
                       x_range=(0, self.dim), y_range=(0, self.dim),
                       tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save'
                       )
+        self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         self.fig2.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
-        ### end img2img section ###
-        self.select = Select(title="Image:", value='Select input folder', options=['Select input folder', 'Select output folder'])
+
+        self.select = Select(title="Image:", value='Select input folder', options=['Select input folder'])
         self.select.on_change('value', self.update_on_select)
 
         # File input
@@ -68,7 +66,19 @@ class StableDiffusionBokehApp():
                                  step=0.01, title="strength")
         self.layout_slider = column(self.slider_ddim_eta, self.slider_ddim_steps, self.slider_scale,
                                self.slider_n_samples, self.slider_n_iter, self.slider_W, self.slider_H, self.slider_strength)
-        self.txt2img_layout = row(column(self.fig1, self.select), column(
+        
+
+        self.fig_gallery = figure(x_range=(0, 1), y_range=(0, 1), plot_width=500, plot_height=500)
+        self.fig_gallery.axis.visible = False
+
+        self.fig_gallery.image_rgba(image='image', x=0, y=1, dw=1, dh=1, source=self.source)
+
+
+        # Layout
+        # txt2img
+
+
+        self.txt2img_layout = row(column(self.fig1, self.select, self.fig_gallery), column(
             self.prompt_input, self.txt2img_button, self.layout_slider))
         self.txt2img_tab = Panel(child=self.txt2img_layout, title='Text to Image')
 
@@ -80,8 +90,12 @@ class StableDiffusionBokehApp():
         # tab it
         self.tabs = Tabs(tabs=[self.txt2img_tab, self.img2img_tab])
 
-        curdoc().add_root(self.tabs)
+        self.doc = curdoc()
+        self.doc.add_root(self.tabs)
+        
 
+
+   
     def get_parameter_values(self):
         parameter_dict = {
             'prompt': self.prompt_input.value,
@@ -111,16 +125,13 @@ class StableDiffusionBokehApp():
         self.images_list = img2img_helper(prompt=self.parameter_dict['prompt'], ddim_eta=self.parameter_dict['ddim_eta'],
                                 ddim_steps=self.parameter_dict['ddim_steps'], scale=self.parameter_dict['scale'],
                                 n_samples=self.parameter_dict['n_samples'], n_iter=self.parameter_dict['n_iter'],
-                                W=self.parameter_dict['W'], H=self.parameter_dict['H'], strength=self.parameter_dict['strength'])
-
+                                W=self.parameter_dict['W'], H=self.parameter_dict['H'], strength=self.parameter_dict['strength'], init_img=self.active_image)
 
         self.active_image = self.images_list[0]
         self.update_image()
     
     def update_image(self):
         self.active_image = self.images_list[0]
-        self.select.options = self.images_list
-        self.select.value = self.active_image
 
         image = Image.open(self.active_image).convert('RGBA')
         xdim, ydim = image.size
@@ -133,8 +144,19 @@ class StableDiffusionBokehApp():
         view[:, :, :] = np.flipud(np.asarray(image))
         self.source.data = dict(image=[img])
 
+        self.select.options = self.images_list
+        # self.select.value = self.active_image
+    
+    def populate_gallery_plot(self):
+        pass
+
+       
+        # self.txt2img_layout.children.append(self.fig_gallery)
+
+
     def update_on_select(self, attr, old, new):
-        self.active_image = new
+        self.add_gallery_plot()
+        self.active_image = self.select.value
         self.update_image()
 
     def import_file(self, attr, old, new):
