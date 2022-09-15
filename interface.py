@@ -3,7 +3,7 @@ from PIL import Image
 import bokeh
 from bokeh.models.widgets import Tabs, Panel
 from bokeh.plotting import figure, show, output_file
-from bokeh.models import ColumnDataSource, CustomJS, Slider, Button, Div, DataTable, TableColumn, NumberFormatter, FileInput, RangeSlider, Select, TextAreaInput, TextInput
+from bokeh.models import ColumnDataSource, CustomJS, Slider, Button, Div, DataTable, TableColumn, NumberFormatter, FileInput, RangeSlider, Select, TextAreaInput, TextInput, ImageURL, ImageRGBA
 from bokeh.layouts import column, row
 from bokeh.io import curdoc
 import numpy as np
@@ -39,6 +39,7 @@ class StableDiffusionBokehApp():
 
         self.select = Select(title="Image:", value='Select input folder', options=['Select input folder'])
         self.select.on_change('value', self.update_on_select)
+        self.select.on_change('options', self.update_on_new_files)
 
         # File input
         self.file_input = FileInput(accept=".png")
@@ -68,17 +69,22 @@ class StableDiffusionBokehApp():
                                self.slider_n_samples, self.slider_n_iter, self.slider_W, self.slider_H, self.slider_strength)
         
 
-        self.fig_gallery = figure(x_range=(0, 1), y_range=(0, 1), plot_width=500, plot_height=500)
-        self.fig_gallery.axis.visible = False
+        # self.fig_gallery = figure(x_range=(0, 1), y_range=(0, 1), plot_width=500, plot_height=500)
 
-        self.fig_gallery.image_rgba(image='image', x=0, y=1, dw=1, dh=1, source=self.source)
+        self.gallery = figure(title='Gallery',
+                      x_range=(0, self.dim*2), y_range=(0, self.dim*2),
+                      tools='pan,wheel_zoom,box_zoom,poly_draw,reset,save')
+         
+        # self.fig_gallery.axis.visible = False
+
+        # self.fig_gallery.image_rgba(image='image', x=0, y=1, dw=1, dh=1, source=self.source)
 
 
         # Layout
         # txt2img
 
 
-        self.txt2img_layout = row(column(self.fig1, self.select, self.fig_gallery), column(
+        self.txt2img_layout = row(column(self.fig1, self.select, self.gallery), column(
             self.prompt_input, self.txt2img_button, self.layout_slider))
         self.txt2img_tab = Panel(child=self.txt2img_layout, title='Text to Image')
 
@@ -118,6 +124,8 @@ class StableDiffusionBokehApp():
                                 W=self.parameter_dict['W'], H=self.parameter_dict['H'])
 
         self.active_image = self.images_list[0]
+        self.select.options = self.images_list
+
         self.update_image()
 
     def img2img_button_handler(self):
@@ -128,12 +136,12 @@ class StableDiffusionBokehApp():
                                 W=self.parameter_dict['W'], H=self.parameter_dict['H'], strength=self.parameter_dict['strength'], init_img=self.active_image)
 
         self.active_image = self.images_list[0]
-        self.update_image()
-    
-    def update_image(self):
-        self.active_image = self.images_list[0]
+        self.select.options = self.images_list
 
-        image = Image.open(self.active_image).convert('RGBA')
+        self.update_image()
+   
+
+    def image_array(self,image):
         xdim, ydim = image.size
         # Create an array representation for the image `img`, and an 8-bit "4
         # layer/RGBA" version of it `view`.
@@ -142,20 +150,31 @@ class StableDiffusionBokehApp():
         # Copy the RGBA image into view, flipping it so it comes right-side up
         # with a lower-left origin
         view[:, :, :] = np.flipud(np.asarray(image))
+
+        return img, view, xdim, ydim
+
+
+    def update_image(self):
+        # self.active_image = self.images_list[0]
+        # self.active_image = self.images_list[self.select.value]
+        image = Image.open(self.active_image).convert('RGBA')
+        img, view, xdim, ydim = self.image_array(image)
         self.source.data = dict(image=[img])
 
-        self.select.options = self.images_list
-        # self.select.value = self.active_image
-    
-    def populate_gallery_plot(self):
-        pass
+    def update_on_new_files(self, attr, old, new):
+        self.populate_gallery_plot()
 
+    def populate_gallery_plot(self):
+
+        for image_ in self.images_list:
+            img, view, xdim, ydim = self.image_array(Image.open(image_).convert('RGBA'))
+            source = ColumnDataSource(data=dict(image=[img]))
+            self.gallery.image_rgba(image='image', x=0, y=0, dw=xdim, dh=ydim, source=source)
        
-        # self.txt2img_layout.children.append(self.fig_gallery)
 
 
     def update_on_select(self, attr, old, new):
-        self.add_gallery_plot()
+        # self.populate_gallery_plot()
         self.active_image = self.select.value
         self.update_image()
 
