@@ -37,9 +37,15 @@ class StableDiffusionBokehApp():
         self.fig1.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
         self.fig2.image_rgba(image='image', x=0, y=0, dw=self.xdim, dh=self.ydim, source=self.source)
 
-        self.select = Select(title="Image:", value='Select input folder', options=['Select input folder'])
-        self.select.on_change('value', self.update_select_on_value_change)
-        self.select.on_change('options', self.update_select_on_new_options)
+        self.select_input = Select(title="Image:", value='Select input folder', options=['Select input folder'])
+        self.select_input.on_change('value', self.update_select_on_value_change)
+        self.select_input.on_change('options', self.update_select_on_new_options)
+
+
+        galery_options = glob.glob('/home/os/gits/stable-diffusion-playground/output/*')
+        self.select_gallery = Select(title="Gallery:", value=galery_options[0], options=galery_options)
+         
+        self.select_gallery.on_change('value', self.update_select_gallery_on_new_value)
 
         # File input
         self.file_input = FileInput(accept=".png")
@@ -75,12 +81,12 @@ class StableDiffusionBokehApp():
 
         # Layout
         # txt2img
-        self.txt2img_layout = row(column(self.fig1, self.select, self.gallery), column(
-            self.prompt_input, self.txt2img_button, self.layout_slider))
+        self.txt2img_layout = row(column(self.fig1, self.select_input), column(
+            self.prompt_input, self.txt2img_button, self.layout_slider), self.gallery)
         self.txt2img_tab = Panel(child=self.txt2img_layout, title='Text to Image')
 
         # img2img
-        self.img2img_layout = row(column(self.fig1, self.select, self.file_input), column(
+        self.img2img_layout = row(column(self.fig1, self.select_input, self.file_input), column(
             self.prompt_input, self.img2img_button, self.layout_slider), column(self.fig2))
         self.img2img_tab = Panel(child=self.img2img_layout, title='Image to Image')
 
@@ -126,7 +132,7 @@ class StableDiffusionBokehApp():
                                 ddim_steps=self.parameter_dict['ddim_steps'], scale=self.parameter_dict['scale'],
                                 n_samples=self.parameter_dict['n_samples'], n_iter=self.parameter_dict['n_iter'],
                                 W=self.parameter_dict['W'], H=self.parameter_dict['H'])
-        self.select.value = self.images_list[0]
+        self.select_input.value = self.images_list[0]
         self.update_image()
 
     def update_image(self):
@@ -139,9 +145,14 @@ class StableDiffusionBokehApp():
         self.populate_gallery_plot()
 
     def update_select_on_value_change(self, attr, old, new):
-        self.active_image = self.select.value
-        self.select.options = self.images_list
+        self.active_image = self.select_input.value
+        self.select_input.options = self.images_list
         self.update_image()
+
+    def update_select_gallery_on_new_value(self, attr, old, new):
+        image_directory = self.select_gallery.value
+        self.images_list = glob.glob(f'{image_directory}/*.png')
+        self.populate_gallery_plot()
 
     def populate_gallery_plot(self):
         for i,image_ in enumerate(self.images_list):
@@ -150,8 +161,8 @@ class StableDiffusionBokehApp():
             source = ColumnDataSource(data=dict(image=[img]))
             self.gallery.image_rgba(image='image', x=xdim*i, y=0, dw=xdim, dh=ydim, source=source)
 
-            # callback = CustomJS(args = {'image': image_, 'select': self.select}, code = "select.value = image") 
-            # self.gallery.js_on_event('tap', callback)
+            callback = CustomJS(args = {'image': image_, 'select': self.select_input}, code = "select.value = image") 
+            self.gallery.js_on_event('tap', callback)
 
             self.gallery.x_range.end = self.xdim * len(self.images_list)
             self.gallery.plot_height = ydim
