@@ -85,23 +85,25 @@ class StableDiffusionBokehApp():
          # Select widgets
         self.select_active_image = Select(
             title="Active image:", value='Active image', options=['Active image'])
-        self.select_active_image.on_change(
-            'value', self.update_select_active_image_on_value_change)
-        self.select_active_image.on_change(
-            'options', self.update_select_active_image_on_options_change)
 
         self.gallery_options = glob.glob(
             '/home/os/gits/stable-diffusion-playground/output/*')
-        self.select_gallery = Select(
+        self.gallery_select = Select(
             title="Gallery:", value=self.gallery_options[0], options=self.gallery_options)
-        self.select_gallery.on_change(
-            'value', self.update_select_gallery_on_new_value)
+        
+        # Callbacks
+        self.gallery_select.on_change(
+            'value', self.cb_gallery_value_change)
+        self.select_active_image.on_change(
+            'value', self.cb_active_image_value_change)
+        self.select_active_image.on_change(
+            'options', self.cb_active_image_options_change)
 
 
         # Layout
         # txt2img
         self.txt2img_layout = row(column(self.select_active_image, self.fig1 ), column(
-            self.prompt_input, self.txt2img_button, self.layout_slider), column(self.select_gallery, self.gallery,))
+            self.prompt_input, self.txt2img_button, self.img2img_button, self.layout_slider), column(self.gallery_select, self.gallery,))
         self.txt2img_tab = Panel(
             child=self.txt2img_layout, title='Text to Image')
 
@@ -154,7 +156,10 @@ class StableDiffusionBokehApp():
                                           ddim_steps=self.parameter_dict['ddim_steps'], scale=self.parameter_dict['scale'],
                                           n_samples=self.parameter_dict['n_samples'], n_iter=self.parameter_dict['n_iter'],
                                           W=self.parameter_dict['W'], H=self.parameter_dict['H'])
+        
         self.select_active_image.value = self.images_list[0]
+        self.select_active_image.options = self.images_list
+
         self.update_image()
 
     def update_image(self):
@@ -162,20 +167,18 @@ class StableDiffusionBokehApp():
         img, view, xdim, ydim = self.image_array(image)
         self.source.data = dict(image=[img])
 
-    def update_select_active_image_on_options_change(self, attr, old, new):
-        # self.select.options = self.images_list
-        # self.populate_gallery_plot()
-        # self.update_select_active_image_on_options_change()
+    def cb_active_image_options_change(self, attr, old, new):
+        self.select_active_image.value = self.images_list[0]
         pass
 
-    def update_select_active_image_on_value_change(self, attr, old, new):
+    def cb_active_image_value_change(self, attr, old, new):
         self.active_image = self.select_active_image.value
         # self.select_active_image.options = self.images_list
-        time.sleep(0.5)
+        # time.sleep(0.5)
         self.update_image()
 
-    def update_select_gallery_on_new_value(self, attr, old, new):
-        image_directory = self.select_gallery.value
+    def cb_gallery_value_change(self, attr, old, new):
+        image_directory = self.gallery_select.value
         self.images_list = glob.glob(f'{image_directory}/*.png')
 
         self.select_active_image.options = self.images_list
@@ -188,7 +191,7 @@ class StableDiffusionBokehApp():
         n_images = len(self.images_list)
         n_rows = int(np.ceil(np.sqrt(n_images)))
         n_cols = int(np.ceil(n_images / n_rows))
-        self.gallery_image_size = (128,128)
+        self.gallery_image_size = (256,256)
 
         for source in self.source_gallery_list:
             source = ColumnDataSource(data=dict(image=[]))
@@ -204,19 +207,22 @@ class StableDiffusionBokehApp():
             source = ColumnDataSource(data=dict(image=[img]))
 
             # self.gallery.image_rgba(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols), dw=xdim, dh=ydim, source=source)
-            self.gallery.image_rgba(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols) - ydim, dw=xdim, dh=ydim, source=source)
+            # tile = self.gallery.image_rgba(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols) - ydim, dw=xdim, dh=ydim, source=source)
+
+            tile = ImageRGBA(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols) - ydim, dw=xdim, dh=ydim)
 
             callback = CustomJS(
                 args={'image': image_, 'select': self.select_active_image}, code="select.value = image")
-            self.gallery.js_on_event('tap', callback)
+
+            tile.js_on_event('tap', callback)
 
             self.source_gallery_list.append(source)
             self.callback_gallery_list.append(callback)
 
-        self.gallery.x_range.start = 0
+        # self.gallery.x_range.start = 0
         self.gallery.x_range.end = xdim*n_cols
 
-        self.gallery.y_range.start = 0
+        # self.gallery.y_range.start = 0
         self.gallery.y_range.end = ydim*n_rows
 
 
