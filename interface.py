@@ -22,8 +22,9 @@ class StableDiffusionBokehApp():
         self.images_list = []
         self.active_image = None
         self.source = ColumnDataSource(data=dict(image=[]))
+        self.source_gallery_list = [ColumnDataSource(data=dict(image=[]))]
 
-        self.xdim, self.ydim = 500, 500
+        self.xdim, self.ydim = 512, 512
         self.dim = max(self.xdim, self.ydim)
 
         # Figures
@@ -99,19 +100,20 @@ class StableDiffusionBokehApp():
 
         # Layout
         # txt2img
-        self.txt2img_layout = row(column(self.fig1, self.select_active_image), column(
-            self.prompt_input, self.txt2img_button, self.layout_slider), column(self.gallery, self.select_gallery))
+        self.txt2img_layout = row(column(self.select_active_image, self.fig1 ), column(
+            self.prompt_input, self.txt2img_button, self.layout_slider), column(self.select_gallery, self.gallery,))
         self.txt2img_tab = Panel(
             child=self.txt2img_layout, title='Text to Image')
 
         # img2img
-        self.img2img_layout = row(column(self.fig1, self.select_active_image, self.file_input), column(
-            self.prompt_input, self.img2img_button, self.layout_slider), column(self.fig2))
-        self.img2img_tab = Panel(
-            child=self.img2img_layout, title='Image to Image')
+        # self.img2img_layout = row(column(self.fig1, self.select_active_image, self.file_input), column(
+            # self.prompt_input, self.img2img_button, self.layout_slider), column(self.fig2))
+        # self.img2img_tab = Panel(
+            # child=self.img2img_layout, title='Image to Image')
 
         # tab it
-        self.tabs = Tabs(tabs=[self.txt2img_tab, self.img2img_tab])
+        # self.tabs = Tabs(tabs=[self.txt2img_tab, self.img2img_tab])
+        self.tabs = Tabs(tabs=[self.txt2img_tab])
 
         self.doc = curdoc()
         self.doc.add_root(self.tabs)
@@ -168,7 +170,8 @@ class StableDiffusionBokehApp():
 
     def update_select_active_image_on_value_change(self, attr, old, new):
         self.active_image = self.select_active_image.value
-        self.select_active_image.options = self.images_list
+        # self.select_active_image.options = self.images_list
+        time.sleep(0.5)
         self.update_image()
 
     def update_select_gallery_on_new_value(self, attr, old, new):
@@ -178,24 +181,48 @@ class StableDiffusionBokehApp():
         self.select_active_image.options = self.images_list
         self.select_active_image.value = self.images_list[0]
 
-        self.populate_gallery_plot()
+        self.populate_gallery_plot_tiled()
 
-    def populate_gallery_plot(self):
+    def populate_gallery_plot_tiled(self):
+
+        n_images = len(self.images_list)
+        n_rows = int(np.ceil(np.sqrt(n_images)))
+        n_cols = int(np.ceil(n_images / n_rows))
+        self.gallery_image_size = (128,128)
+
+        for source in self.source_gallery_list:
+            source = ColumnDataSource(data=dict(image=[]))
+
+        self.callback_gallery_list = []
+        self.source_gallery_list = []
+
         for i, image_ in enumerate(self.images_list):
-            img, view, xdim, ydim = self.image_array(
-                Image.open(image_).convert('RGBA'))
+            image = Image.open(image_).convert('RGBA')
+            image = image.resize(self.gallery_image_size)
+            img, view, xdim, ydim = self.image_array(image)
 
             source = ColumnDataSource(data=dict(image=[img]))
-            self.gallery.image_rgba(
-                image='image', x=xdim*i, y=0, dw=xdim, dh=ydim, source=source)
+
+            # self.gallery.image_rgba(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols), dw=xdim, dh=ydim, source=source)
+            self.gallery.image_rgba(image='image', x=xdim*(i % n_cols), y=ydim*(n_rows - i // n_cols) - ydim, dw=xdim, dh=ydim, source=source)
 
             callback = CustomJS(
                 args={'image': image_, 'select': self.select_active_image}, code="select.value = image")
             self.gallery.js_on_event('tap', callback)
 
-            self.gallery.x_range.end = self.xdim * len(self.images_list)
-            self.gallery.plot_height = ydim
-            self.gallery.plot_width = self.xdim * len(self.images_list)
+            self.source_gallery_list.append(source)
+            self.callback_gallery_list.append(callback)
+
+        self.gallery.x_range.start = 0
+        self.gallery.x_range.end = xdim*n_cols
+
+        self.gallery.y_range.start = 0
+        self.gallery.y_range.end = ydim*n_rows
+
+
+        # self.gallery.plot_height = self.gallery_image_size[1] * n_rows
+        # self.gallery.plot_width = self.xdim * n_cols
+
 
     def import_file(self, attr, old, new):
         pass
